@@ -1,56 +1,56 @@
+# ============================================================
+#  Snake animation generator → push to `output` branch
+#  Place this file at: .github/workflows/snake.yml
+#  (Pure SVG output — no GIF, so NO loading/progress bar)
+# ============================================================
+
 name: Generate Snake Animation
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # Runs every 6 hours for more updates
-  
-  workflow_dispatch:
-  
+    - cron: "0 */6 * * *"   # Every 6 hours
+  workflow_dispatch:         # Manual run button
   push:
     branches:
       - main
       - master
 
+concurrency:
+  group: snake-animation
+  cancel-in-progress: true
+
 jobs:
   generate:
     permissions:
-      contents: write
+      contents: write        # Allows pushing SVGs to the output branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate snake SVG (Modern - No Loading Bar)
+      # --- SVG-only outputs = no loading bar. Custom violet/cyan snake palette. ---
+      - name: Generate snake SVGs (modern, no loading bar)
         uses: Platane/snk@v3
-        id: snake-gif
         with:
           github_user_name: ${{ github.repository_owner }}
           outputs: |
             dist/github-contribution-grid-snake.svg
             dist/github-contribution-grid-snake-dark.svg?palette=github-dark
-            dist/github-contribution-grid-snake-only-contributions.svg?color_snake=#2ecc71&color_dots=#2ecc71,#27ae60,#229954,#1e8449,#196f3d
+            dist/github-contribution-grid-snake-ocean.svg?color_snake=#7C3AED&color_dots=#9FB3FF,#7289F7,#7C3AED,#06B6D4,#00E5FF
 
-      - name: Create output branch if not exists
-        run: |
-          if ! git ls-remote --heads origin output | grep -q output; then
-            git checkout --orphan output
-            git reset --hard
-            git commit --allow-empty -m "Initialize output branch"
-            git push origin output
-          fi
-
+      # --- ghaction-github-pages creates the output branch automatically ---
       - name: Push to output branch
         uses: crazy-max/ghaction-github-pages@v4
         with:
           target_branch: output
           build_dir: dist
-          commit_message: "Update snake animation - ${{ github.sha }}"
+          commit_message: "chore: update snake animation"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload SVG as artifact
+      - name: Upload SVGs as artifact
         uses: actions/upload-artifact@v4
         with:
           name: github-snake-svg
